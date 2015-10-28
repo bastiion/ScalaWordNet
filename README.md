@@ -1,6 +1,7 @@
 # ScalaWordNet
 
-Scala bindings around [WordNet](http://wordnet.princeton.edu) and WS4j.
+Scala bindings around [WordNet](http://wordnet.princeton.edu), [WS4j](https://github.com/Sciss/ws4j),
+and [JWNL](http://jwordnet.sourceforge.net/).
 The original author was Sujit Pal (Scalcium), adapted by Hanns Holger Rutz
 to be more idiomatic Scala and less Python. (C)opyright 2015,
 all rights reserved. Published under the GNU General Public License v2+.
@@ -12,17 +13,22 @@ Background:
 - [NLTK-like Wordnet Interface in Scala](http://sujitpal.blogspot.co.at/2014/04/nltk-like-wordnet-interface-in-scala.html)
 - [Scalcium](https://github.com/sujitpal/scalcium)
 
-## WordNet-3.0
+## Installing the database
 
-Put a symlink to this into `link`.
+Because of the combination of WS4j (jawjaw) and JWNL, currently the WordNet database must 
+be present in two different forms. Hopefully this will be resolved in a future version.
 
-## wnjpn.db
+### WordNet-3.0
+
+Download the original WordNet package from http://wordnet.princeton.edu/wordnet/download/ and 
+put a symlink to this into `link`.
+
+### wnjpn.db
 
 In addition to WordNet-3.0, also the English-Japanese database must be installed. This
-doesn't seem to make sense, but jawjaw apparently relies on that SQL database in addition
-to WordNet-3.0 dict.
+is because jawjaw and WS4j apparently rely on that SQL database.
 
-To run the tests, download http://nlpwww.nict.go.jp/wn-ja/data/1.1/wnjpn.db.gz
+Download http://nlpwww.nict.go.jp/wn-ja/data/1.1/wnjpn.db.gz
 and unzip the `.db` file into the `config` directory.
 
 There is perhaps an alternative, English only, version here:
