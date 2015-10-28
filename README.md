@@ -1,20 +1,16 @@
 # ScalaWordNet
 
-Fiddling around with Scala bindings and [WordNet](http://wordnet.princeton.edu).
+Scala bindings around [WordNet](http://wordnet.princeton.edu) and WS4j.
+The original author was Sujit Pal (Scalcium), adapted by Hanns Holger Rutz
+to be more idiomatic Scala and less Python. (C)opyright 2015,
+all rights reserved. Published under the GNU General Public License v2+.
 
-Resources:
+The file `WordNetTest` gives an overview of the API.
+
+Background:
 
 - [NLTK-like Wordnet Interface in Scala](http://sujitpal.blogspot.co.at/2014/04/nltk-like-wordnet-interface-in-scala.html)
 - [Scalcium](https://github.com/sujitpal/scalcium)
-
-The current source is taken from Scalcium.
-
-We are using Maven Central artifacts now for WS4j and Jawjaw. Currently two tests fail:
-
- - `car.lesk_similarity(bus)`   
- - `wn.synset('car.n.01').examples`
- 
-It's unclear why these don't work.
 
 ## WordNet-3.0
 

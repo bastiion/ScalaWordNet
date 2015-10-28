@@ -81,7 +81,7 @@ class WordNetTest {
   @Test
   def testSynsetLemma(): Unit = {
     Console.println(">>> wn.lemma('car.n.01.automobile').name")
-    val sl = wn.lemma(wn.synset("car", POS.NOUN, 1), 2)
+    val sl = wn.getLemma(wn.synset("car", POS.NOUN, 1), 2)
     sl match {
       case Some(x) =>
         Console.println(x.getLemma)
@@ -106,9 +106,9 @@ class WordNetTest {
     Console.println("...     print synset.lemma_names")
     Console.println("...")
     val lns = wn.synsets("car")
-      .map(ss => wn.lemmaNames(Some(ss)))
+      .map(ss => wn.lemmaNames(ss))
     lns.foreach(ln =>
-      Console.println("[" + ln.mkString(", ") + "]"))
+      Console.println(ln.mkString("[", ", ", "]")))
     Assert.assertEquals(5, lns.size)
     Assert.assertEquals(5, lns.head.size)
   }
@@ -158,7 +158,7 @@ class WordNetTest {
     Console.println(">>> sorted([lemma.name for synset\n" +
       "...    in types_of_motorcar for lemma in synset.lemmas])")
     val sortedMotorcarNames = typesOfMotorcar
-      .map(ss => wn.lemmaNames(Some(ss)).head)
+      .map(ss => wn.lemmaNames(ss).head)
       .sortWith((a,b) => a < b)
     Console.println(sortedMotorcarNames)
     Assert.assertEquals("Model_T", sortedMotorcarNames.head)
@@ -277,20 +277,20 @@ class WordNetTest {
     Console.println("...")
     mintss.foreach(ss =>
       Console.println(wn.format(ss) + ": " +
-        wn.definition(Some(ss))))
+        wn.definition(ss)))
     Console.println(">>> wn.synset('mint.n.04').part_holonyms()")
     val mint = wn.synset("mint", POS.NOUN, 4)
     val ph = wn.partHolonyms(mint)
     Console.println(ph.map(ss => wn.format(ss)))
     Console.println(">>> [x.definition for x")
     Console.println("...    in wn.synset('mint.n.04').part_holonyms()]")
-    Console.println(ph.map(ss => wn.definition(Some(ss))))
+    Console.println(ph.map(ss => wn.definition(ss)))
     Console.println(">>> wn.synset('mint.n.04').substance_holonyms()")
     val sh = wn.substanceHolonyms(mint)
     Console.println(sh.map(ss => wn.format(ss)))
     Console.println(">>> [x.definition for x")
     Console.println("...    in wn.synset('mint.n.04').substance_holonyms()]")
-    Console.println(sh.map(ss => wn.definition(Some(ss))))
+    Console.println(sh.map(ss => wn.definition(ss)))
   }
 
   /**
@@ -438,11 +438,11 @@ class WordNetTest {
    */
   @Test
   def testPathSimilarity(): Unit = {
-    val right = wn.synset("right_whale", POS.NOUN, 1)
-    val orca = wn.synset("orca", POS.NOUN, 1)
-    val minke = wn.synset("minke_whale", POS.NOUN, 1)
-    val tortoise = wn.synset("tortoise", POS.NOUN, 1)
-    val novel = wn.synset("novel", POS.NOUN, 1)
+    val right     = wn.synset("right_whale" , POS.NOUN, 1)
+    val orca      = wn.synset("orca"        , POS.NOUN, 1)
+    val minke     = wn.synset("minke_whale" , POS.NOUN, 1)
+    val tortoise  = wn.synset("tortoise"    , POS.NOUN, 1)
+    val novel     = wn.synset("novel"       , POS.NOUN, 1)
     Console.println(">>> right.path_similarity(minke)")
     val rightMinkePathSimilarity = wn.pathSimilarity(right, minke)
     Console.println(rightMinkePathSimilarity)
@@ -493,14 +493,14 @@ class WordNetTest {
     Console.println(">>> slap = wn.synset('slap.v.01')")
     Console.println(">>> car = wn.synset('car.n.01')")
     Console.println(">>> bus = wn.synset('bus.n.01')")
-    val dog = wn.synset("dog", POS.NOUN, 1)
-    val cat = wn.synset("cat", POS.NOUN, 1)
-    val hit = wn.synset("hit", POS.VERB, 1)
-    val slap = wn.synset("slap", POS.VERB, 1)
-    //val car = wn.synset("car", POS.NOUN, 1)
-    //val bus = wn.synset("bus", POS.NOUN, 1)
-    val car = wn.synset("weak", POS.ADJECTIVE, 1)
-    val bus = wn.synset("physical", POS.ADJECTIVE, 1)
+    val dog   = wn.synset("dog"     , POS.NOUN, 1)
+    val cat   = wn.synset("cat"     , POS.NOUN, 1)
+    val hit   = wn.synset("hit"     , POS.VERB, 1)
+    val slap  = wn.synset("slap"    , POS.VERB, 1)
+    val car   = wn.synset("car"     , POS.NOUN, 1)
+    val bus   = wn.synset("bus"     , POS.NOUN, 1)
+//    val car   = wn.synset("weak"    , POS.ADJECTIVE, 1)
+//    val bus   = wn.synset("physical", POS.ADJECTIVE, 1)
 
     Console.println(">>> dog.path_similarity(cat)")
     val dogCatPathSimilarity = wn.pathSimilarity(dog, cat)

@@ -6,12 +6,11 @@
  *  All rights reserved.
  *
  *	This software is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU General Public License
+ *	modify it under the terms of the GNU General Public License v2+.
  */
 
-// original source: https://github.com/sujitpal/scalcium
-//
-// changes by HHR:
+// based on original source: https://github.com/sujitpal/scalcium
+// - removed all senseless option arguments
 // - move package from `com.mycompany.scalcium.wordnet` to `de.sciss.wordnet`
 // - code clean up (remove unused imports, IntelliJ inspections etc.)
 
@@ -66,211 +65,153 @@ class WordNet(wnConfig: InputStream) {
     else iword.getSenses.toList
   }
 
-  def synset(lemma: String, pos: POS,
-             sid: Int): Option[Synset] = {
+  def getSynset(lemma: String, pos: POS, sid: Int): Option[Synset] = {
     val iword = dict.getIndexWord(pos, lemma)
     if (iword != null) Some(iword.getSense(sid))
     else None
   }
 
+  def synset(lemma: String, pos: POS, sid: Int): Synset =
+    getSynset(lemma, pos, sid)
+      .getOrElse(throw new NoSuchElementException(s"lemma = '$lemma', pos = $pos, sid = $sid"))
+
   def lemmas(s: String): List[Word] =
     synsets(s)
-      .flatMap(ss => lemmas(Some(ss)))
+      .flatMap(ss => lemmas(ss))
       .filter(_.getLemma == s)
 
-  def lemmas(oss: Option[Synset]): List[Word] =
-    oss.fold(List.empty[Word])(_.getWords.toList)
+  def lemmas(ss: Synset): List[Word] = ss.getWords.toList
 
-  def lemma(oss: Option[Synset], wid: Int): Option[Word] =
-    oss match {
-      case Some(x) => Option(lemmas(oss)(wid))
-      case None => None
-    }
+  def lemma(ss: Synset, wid: Int): Word = getLemma(ss, wid)
+    .getOrElse(throw new NoSuchElementException(s"synset = $ss, wid = $wid"))
 
-  def lemma(oss: Option[Synset], lem: String): Option[Word] =
-    oss.flatMap { ss =>
-      val words = ss.getWords
-        .filter(w => lem == w.getLemma)
-      words.headOption
-    }
+  def getLemma(ss: Synset, wid: Int): Option[Word] = {
+    val l = lemmas(ss)
+    if (l.size < wid) None else Some(l(wid))
+  }
+
+  def lemma(ss: Synset, lem: String): Word =
+    getLemma(ss, lem).getOrElse(throw new NoSuchElementException(s"synset =  $ss, lem = $lem"))
+
+  def getLemma(ss: Synset, lem: String): Option[Word] = {
+    val words = ss.getWords
+      .filter(w => lem == w.getLemma)
+    words.headOption
+  }
 
   ////////////////// similarities /////////////////////
 
-  def pathSimilarity(loss: Option[Synset],
-                     ross: Option[Synset]): Double =
-    getPathSimilarity(loss, ross, Path_Similarity)
-
-  def lchSimilarity(loss: Option[Synset],
-                    ross: Option[Synset]): Double =
-    getPathSimilarity(loss, ross, LCH_Similarity)
-
-  def wupSimilarity(loss: Option[Synset],
-                    ross: Option[Synset]): Double =
-    getPathSimilarity(loss, ross, WUP_Similarity)
+  def pathSimilarity(left: Synset, right: Synset): Double = getPathSimilarity(left, right, Path_Similarity)
+  def lchSimilarity (left: Synset, right: Synset): Double = getPathSimilarity(left, right, LCH_Similarity )
+  def wupSimilarity (left: Synset, right: Synset): Double = getPathSimilarity(left, right, WUP_Similarity )
 
   // WS4j Information Content Finder (ICFinder) uses
   // SEMCOR, Resnik, JCN and Lin similarities are with
   // the SEMCOR corpus.
-  def resSimilarity(loss: Option[Synset],
-                    ross: Option[Synset]): Double =
-    getPathSimilarity(loss, ross, RES_Similarity)
+  def resSimilarity (left: Synset, right: Synset): Double = getPathSimilarity(left, right, RES_Similarity )
+  def jcnSimilarity (left: Synset, right: Synset): Double = getPathSimilarity(left, right, JCN_Similarity )
+  def linSimilarity (left: Synset, right: Synset): Double = getPathSimilarity(left, right, LIN_Similarity )
+  def leskSimilarity(left: Synset, right: Synset): Double = getPathSimilarity(left, right, Lesk_Similarity)
 
-  def jcnSimilarity(loss: Option[Synset],
-                    ross: Option[Synset]): Double =
-    getPathSimilarity(loss, ross, JCN_Similarity)
-
-  def linSimilarity(loss: Option[Synset],
-                    ross: Option[Synset]): Double =
-    getPathSimilarity(loss, ross, LIN_Similarity)
-
-  def leskSimilarity(loss: Option[Synset],
-                     ross: Option[Synset]): Double =
-    getPathSimilarity(loss, ross, Lesk_Similarity)
-
-  def getPathSimilarity(loss: Option[Synset],
-                        ross: Option[Synset],
+  def getPathSimilarity(left: Synset, right: Synset,
                         sim: RelatednessCalculator): Double = {
-    val lconcept = getWS4jConcept(loss)
-    val rconcept = getWS4jConcept(ross)
-    if (lconcept == null || rconcept == null) 0.0D
-    else sim.calcRelatednessOfSynset(lconcept, rconcept)
-      .getScore
+    val opt = for {
+      lConcept <- getWS4jConcept(left)
+      rConcept <- getWS4jConcept(right)
+    } yield sim.calcRelatednessOfSynset(lConcept, rConcept).getScore
+    
+    opt.getOrElse(0.0)
   }
 
-  def getWS4jConcept(oss: Option[Synset]): Concept =
-    oss match {
-      case Some(ss) =>
-        val pos = edu.cmu.lti.jawjaw.pobj.POS.valueOf(
-          ss.getPOS.getKey)
-        val synset = WordNetUtil.wordToSynsets(
-          ss.getWord(0).getLemma, pos)
-          .head
-        new Concept(synset.getSynset, pos)
-      case _ => null
-    }
+  def getWS4jConcept(ss: Synset): Option[Concept] = {
+    val pos     = edu.cmu.lti.jawjaw.pobj.POS.valueOf(ss.getPOS.getKey)
+    val synsets = WordNetUtil.wordToSynsets(ss.getWord(0).getLemma, pos)
+    synsets.headOption.map(synset => new Concept(synset.getSynset, pos))
+  }
 
   ////////////////// Morphy ///////////////////////////
 
   def morphy(s: String, pos: POS): String = {
-    val bf = dict.getMorphologicalProcessor
-      .lookupBaseForm(pos, s)
+    val mp = dict.getMorphologicalProcessor
+    val bf = mp.lookupBaseForm(pos, s)
     if (bf == null) "" else bf.getLemma
   }
 
   def morphy(s: String): String = {
-    val bases = POS.getAllPOS.map(pos =>
-      morphy(s, pos.asInstanceOf[POS]))
-      .filter(str => !str.isEmpty)
-      .toSet
-    if (bases.isEmpty) "" else bases.toList.head
+    val m: List[String] = POS.getAllPOS.map(pos =>
+      morphy(s, pos.asInstanceOf[POS]))(breakOut)
+    val bases: List[String] = m.filterNot(_.isEmpty).distinct
+    bases.headOption.getOrElse("")
   }
 
   ////////////////// Synset ///////////////////////////
 
-  def lemmaNames(oss: Option[Synset]): List[String] =
-    oss match {
-      case Some(ss) => ss.getWords
-        .map(word => word.getLemma)(breakOut)
+  def lemmaNames(ss: Synset): List[String] =
+    ss.getWords.map(_.getLemma)(breakOut)
 
-      case _ => List.empty[String]
-    }
-
-  def definition(oss: Option[Synset]): String =
-    oss.fold("") { ss =>
-      ss.getGloss
-        .split(";")
-        .filter(s => !isQuoted(s.trim))
-        .mkString(";")
-    }
-
-  def examples(oss: Option[Synset]): List[String] =
-    oss match {
-      case Some(ss) =>
-        ss.getGloss
-          .split(";")
-          .filter(s => isQuoted(s.trim))
-          .map(s => s.trim())(breakOut)
-
-      case _ => List.empty[String]
-    }
-
-  def hyponyms(oss: Option[Synset]): List[Synset] =
-    relatedSynsets(oss, PointerType.HYPONYM)
-
-  def hypernyms(oss: Option[Synset]): List[Synset] =
-    relatedSynsets(oss, PointerType.HYPERNYM)
-
-  def partMeronyms(oss: Option[Synset]): List[Synset] =
-    relatedSynsets(oss, PointerType.PART_MERONYM)
-
-  def partHolonyms(oss: Option[Synset]): List[Synset] =
-    relatedSynsets(oss, PointerType.PART_HOLONYM)
-
-  def substanceMeronyms(oss: Option[Synset]): List[Synset] =
-    relatedSynsets(oss, PointerType.SUBSTANCE_MERONYM)
-
-  def substanceHolonyms(oss: Option[Synset]): List[Synset] =
-    relatedSynsets(oss, PointerType.SUBSTANCE_HOLONYM)
-
-  def memberHolonyms(oss: Option[Synset]): List[Synset] =
-    relatedSynsets(oss, PointerType.MEMBER_HOLONYM)
-
-  def entailments(oss: Option[Synset]): List[Synset] =
-    relatedSynsets(oss, PointerType.ENTAILMENT)
-
-  def entailedBy(oss: Option[Synset]): List[Synset] =
-    relatedSynsets(oss, PointerType.ENTAILED_BY)
-
-  def relatedSynsets(oss: Option[Synset],
-                     ptr: PointerType): List[Synset] =
-    oss match {
-      case Some(ss) => ss.getPointers(ptr)
-        .map(ptr => ptr.getTarget.asInstanceOf[Synset])(breakOut)
-      case _ => List.empty[Synset]
-    }
-
-  def hypernymPaths(oss: Option[Synset]): List[List[Synset]] =
-    oss match {
-      case Some(ss) => PointerUtils.getInstance()
-        .getHypernymTree(ss)
-        .toList
-        .map(ptnl => ptnl.asInstanceOf[PointerTargetNodeList]
-          .map(ptn => ptn.asInstanceOf[PointerTargetNode].getSynset)
-          .toList)(breakOut)
-
-      case _ => List.empty[List[Synset]]
-    }
-
-  def rootHypernyms(oss: Option[Synset]): List[Synset] =
-    hypernymPaths(oss)
-      .map(hp => hp.reverse.head).distinct
-
-  def lowestCommonHypernym(loss: Option[Synset],
-                           ross: Option[Synset]): List[Synset] = {
-    val lpaths = hypernymPaths(loss)
-    val rpaths = hypernymPaths(ross)
-    val pairs = for (lpath <- lpaths; rpath <- rpaths)
-      yield (lpath, rpath)
-    val lchs = ArrayBuffer[(Synset,Int)]()
-    pairs.map { pair =>
-      val lset = Set(pair._1).flatten
-      val matched = pair._2
-        .zipWithIndex
-        .filter(si => lset.contains(si._1))
-      if (matched.nonEmpty) lchs += matched.head
-    }
-    val lchss = lchs.sortWith((a, b) => a._2 < b._2)
-      .map(lc => lc._1)
-      .toList
-    if (lchss.isEmpty) List.empty[Synset]
-    else List(lchss.head)
+  def definition(ss: Synset): String = {
+    val g = ss.getGloss
+    g.split(";")
+      .filter(s => !isQuoted(s.trim()))
+      .mkString(";")
   }
 
-  def minDepth(oss: Option[Synset]): Int = {
-    val lens = hypernymPaths(oss)
+  def examples(ss: Synset): List[String] = {
+    val g = ss.getGloss
+    g.split(";")
+      .collect {
+        case s if isQuoted(s.trim()) => s.trim()
+      } (breakOut)
+  }
+
+  def hyponyms          (ss: Synset): List[Synset] = relatedSynsets(ss, PointerType.HYPONYM           )
+  def hypernyms         (ss: Synset): List[Synset] = relatedSynsets(ss, PointerType.HYPERNYM          )
+  def partMeronyms      (ss: Synset): List[Synset] = relatedSynsets(ss, PointerType.PART_MERONYM      )
+  def partHolonyms      (ss: Synset): List[Synset] = relatedSynsets(ss, PointerType.PART_HOLONYM      )
+  def substanceMeronyms (ss: Synset): List[Synset] = relatedSynsets(ss, PointerType.SUBSTANCE_MERONYM )
+  def substanceHolonyms (ss: Synset): List[Synset] = relatedSynsets(ss, PointerType.SUBSTANCE_HOLONYM )
+  def memberHolonyms    (ss: Synset): List[Synset] = relatedSynsets(ss, PointerType.MEMBER_HOLONYM    )
+  def entailments       (ss: Synset): List[Synset] = relatedSynsets(ss, PointerType.ENTAILMENT        )
+  def entailedBy        (ss: Synset): List[Synset] = relatedSynsets(ss, PointerType.ENTAILED_BY       )
+
+  def relatedSynsets(ss: Synset, ptr: PointerType): List[Synset] =
+    ss.getPointers(ptr).map(ptr => ptr.getTarget.asInstanceOf[Synset])(breakOut)
+
+  def hypernymPaths(ss: Synset): List[List[Synset]] =
+    PointerUtils.getInstance()
+      .getHypernymTree(ss)
+      .toList
+      .map(ptnl => ptnl.asInstanceOf[PointerTargetNodeList]
+        .map(ptn => ptn.asInstanceOf[PointerTargetNode].getSynset)
+        .toList)(breakOut)
+
+  def rootHypernyms(ss: Synset): List[Synset] =
+    hypernymPaths(ss)
+      .map(hp => hp.reverse.head).distinct
+
+  def lowestCommonHypernym(left: Synset, right: Synset): Option[Synset] = {
+    val lPaths  = hypernymPaths(left)
+    val rPaths  = hypernymPaths(right)
+    val pairs   = for (lPath <- lPaths; rPath <- rPaths) yield (lPath, rPath)
+    val lchs    = ArrayBuffer[(Synset,Int)]()
+    pairs.map { pair =>
+      val lSet = Set(pair._1).flatten
+      val matched = pair._2
+        .zipWithIndex
+        .filter(si => lSet.contains(si._1))
+      if (matched.nonEmpty) lchs += matched.head
+    }
+    val lchss: List[Synset] = lchs.sortWith((a, b) => a._2 < b._2)
+      .map(lc => lc._1)(breakOut)
+
+    lchss.headOption
+  }
+
+  def minDepth(ss: Synset): Int = {
+    val lens = hypernymPaths(ss)
       .map(path => path.size)
       .sortWith((a,b) => a > b)
-    if (lens.isEmpty) -1 else lens.head - 1
+    lens.headOption.getOrElse(0) - 1
   }
 
   def format(ss: Synset): String =
@@ -281,17 +222,12 @@ class WordNet(wnConfig: InputStream) {
 
   /////////////////// Words / Lemmas ////////////////////
 
-  def antonyms(ow: Option[Word]): List[Word] =
-    relatedLemmas(ow, PointerType.ANTONYM)
+  def antonyms(w: Word): List[Word] =
+    relatedLemmas(w, PointerType.ANTONYM)
 
-  def relatedLemmas(ow: Option[Word],
-                    ptr: PointerType): List[Word] =
-    ow match {
-      case Some(w) => w.getPointers(ptr)
-        .map(ptr => ptr.getTarget.asInstanceOf[Word])(breakOut)
-
-      case _ => List.empty[Word]
-    }
+  def relatedLemmas(w: Word, ptr: PointerType): List[Word] =
+    w.getPointers(ptr)
+      .map(ptr => ptr.getTarget.asInstanceOf[Word])(breakOut)
 
   def format(w : Word): String =
     List(w.getSynset.getWord(0).getLemma,
@@ -303,5 +239,5 @@ class WordNet(wnConfig: InputStream) {
   ////////////////// misc ////////////////////////////////
 
   def isQuoted(s: String): Boolean =
-    s.isEmpty && s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"'
+    !s.isEmpty && s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"'
 }

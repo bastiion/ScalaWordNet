@@ -19,3 +19,6 @@ libraryDependencies ++= Seq(
 // cf. http://www.scala-sbt.org/0.13.5/docs/Detailed-Topics/Classpaths.html
 unmanagedClasspath in Runtime += baseDirectory.value / "config"
 unmanagedClasspath in Test    += baseDirectory.value / "config"
+unmanagedClasspath in Compile += baseDirectory.value / "config"
+
+initialCommands in console := "import de.sciss.wordnet._"
