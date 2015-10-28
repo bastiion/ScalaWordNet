@@ -11,7 +11,7 @@ scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-encoding", "ut
 licenses      := Seq("GPL v2+" -> url("https://www.gnu.org/licenses/gpl-2.0.txt"))
 
 libraryDependencies ++= Seq(
-  "de.sciss"        % "ws4j"            % "0.1.0-SNAPSHOT",
+  "de.sciss"        % "ws4j"            % "0.1.0",
   "net.sf.jwordnet" % "jwnl"            % "1.4_rc3",
   "com.novocode"    % "junit-interface" % "0.11"     % "test"
 )
