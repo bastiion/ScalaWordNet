@@ -13,6 +13,7 @@ Background:
 - [NLTK-like Wordnet Interface in Scala](http://sujitpal.blogspot.co.at/2014/04/nltk-like-wordnet-interface-in-scala.html)
 - [Scalcium](https://github.com/sujitpal/scalcium)
 - [NLTK HowTo](http://www.nltk.org/howto/wordnet.html)
+- [How is WordNet organized?](http://shiffman.net/teaching/a2z_2008/wordnet/)
 
 ## Installing the database
 
