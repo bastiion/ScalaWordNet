@@ -5,7 +5,7 @@ The original author was Sujit Pal (Scalcium), adapted by Hanns Holger Rutz
 to be more idiomatic Scala and less Python. (C)opyright 2015,
 all rights reserved. Published under the GNU General Public License v2+.
 
-The file `WordNetTest` gives an overview of the API.
+The file `WordNetTest.scala` gives an overview of the API.
 
 Background:
 
