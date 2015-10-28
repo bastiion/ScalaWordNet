@@ -12,6 +12,7 @@ Background:
 
 - [NLTK-like Wordnet Interface in Scala](http://sujitpal.blogspot.co.at/2014/04/nltk-like-wordnet-interface-in-scala.html)
 - [Scalcium](https://github.com/sujitpal/scalcium)
+- [NLTK HowTo](http://www.nltk.org/howto/wordnet.html)
 
 ## Installing the database
 
@@ -34,3 +35,9 @@ and unzip the `.db` file into the `config` directory.
 There is perhaps an alternative, English only, version here:
 http://sourceforge.net/projects/wnsql/files/wnsql3/sqlite/3.1/sqlite-31.db.zip/download
 (The format doesn't seem to be compatible with Jawjaw)
+
+## TO-DO
+
+We need a better shortest path. Have a look at:
+
+- Ferlež, Jure, and Matjaž Gams. "Shortest-Path Semantic Distance Measure in WordNet v2.0." Information Society in 2004 (2004): 381.

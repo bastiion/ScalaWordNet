@@ -21,4 +21,8 @@ unmanagedClasspath in Runtime += baseDirectory.value / "config"
 unmanagedClasspath in Test    += baseDirectory.value / "config"
 unmanagedClasspath in Compile += baseDirectory.value / "config"
 
-initialCommands in console := "import de.sciss.wordnet._"
+initialCommands in console :=
+  """import de.sciss.wordnet._
+    |val wn = WordNet()
+    |import wn._
+    |""".stripMargin

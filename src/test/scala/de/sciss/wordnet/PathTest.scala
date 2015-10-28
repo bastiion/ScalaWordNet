@@ -1,19 +1,28 @@
 package de.sciss.wordnet
 
-import edu.cmu.lti.ws4j.util.PathFinder
-
-/* XXX TODO -- this is currently wrong. The returned
-   path is always of length 1 and seems to correspond
-   to the least-common hypernym.
- */
 object PathTest extends App {
   val wn        = WordNet()
-  val pf        = new PathFinder(wn.lexdb)
-  val s1        = wn.synsets("red"    ).head
-  val s2        = wn.synsets("pigment").head
-  val list      = wn.shortestPath(s1, s2)
-  println(list.size)
-  list.zipWithIndex.foreach { case (ss, i) =>
-    println(f"$i%02d: $ss")
+//  val s1        = wn.synsets("red"    ).head
+//  val s2        = wn.synsets("pigment").head
+  val s1        = wn.synset("cat", Noun)
+  val s2        = wn.synset("dog", Noun)
+  val list      = wn.shortestHypernymPath(s1, s2).getOrElse((Nil, Nil))
+
+  def printList(list: List[Synset]): Unit = {
+    println(list.size)
+    list.zipWithIndex.foreach { case (ss, i) =>
+      println(f"$i%02d: ${ss.getWords.head} ${ss.getGloss}")
+    }
   }
+
+  println(s"SHORTEST PATH for ${s1.getGloss} AND ${s2.getGloss}")
+  printList(list._1)
+  println("---")
+  printList(list._2)
+
+  //  println(s"PATHS for ${s1.getGloss}")
+//  wn.hypernymPaths(s1).foreach(printList)
+//
+//  println(s"PATHS for ${s2.getGloss}")
+//  wn.hypernymPaths(s2).foreach(printList)
 }

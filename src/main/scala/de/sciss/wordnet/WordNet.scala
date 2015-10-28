@@ -16,18 +16,16 @@
 
 package de.sciss.wordnet
 
-import java.io.{InputStream, File, FileInputStream}
+import java.io.{File, FileInputStream, InputStream}
 
-import edu.cmu.lti.jawjaw.db.SynsetDAO
 import edu.cmu.lti.jawjaw.util.WordNetUtil
 import edu.cmu.lti.lexical_db.NictWordNet
 import edu.cmu.lti.lexical_db.data.Concept
 import edu.cmu.lti.ws4j.RelatednessCalculator
 import edu.cmu.lti.ws4j.impl.{JiangConrath, LeacockChodorow, Lesk, Lin, Path, Resnik, WuPalmer}
-import edu.cmu.lti.ws4j.util.PathFinder
 import net.didion.jwnl.JWNL
 import net.didion.jwnl.data.list.{PointerTargetNode, PointerTargetNodeList}
-import net.didion.jwnl.data.{IndexWord, POS, PointerType, PointerUtils, Synset, Word}
+import net.didion.jwnl.data.{IndexWord, PointerType, PointerUtils, Word}
 import net.didion.jwnl.dictionary.Dictionary
 
 import scala.collection.JavaConversions._
@@ -58,7 +56,7 @@ class WordNet(wnConfig: InputStream) {
       .toStream
 
   def synsets(lemma: String): List[Synset] =
-    POS.getAllPOS
+    net.didion.jwnl.data.POS.getAllPOS
       .flatMap(pos => synsets(lemma, pos.asInstanceOf[POS]))(breakOut)
 
   def synsets(lemma: String, pos: POS): List[Synset] = {
@@ -76,6 +74,8 @@ class WordNet(wnConfig: InputStream) {
   def synset(lemma: String, pos: POS, sid: Int): Synset =
     getSynset(lemma, pos, sid)
       .getOrElse(throw new NoSuchElementException(s"lemma = '$lemma', pos = $pos, sid = $sid"))
+
+  def synset(lemma: String, pos: POS): Synset = synset(lemma, pos, 1)
 
   def lemmas(s: String): List[Word] =
     synsets(s)
@@ -131,35 +131,35 @@ class WordNet(wnConfig: InputStream) {
     synsets.headOption.map(synset => new Concept(synset.getSynset, pos))
   }
 
-  /** NOTE: this is currently wrong. The returned
-    * path is always of length 1 and seems to correspond
-    * to the least-common hypernym.
-    * Looks like `getAllPaths` is wrong in WS4j.
-    */
-  def shortestPath(left: Synset, right: Synset): List[Synset] = {
-    val pf = new PathFinder(lexdb)
-    val listOpt = for {
-      c1 <- getWS4jConcept(left )
-      c2 <- getWS4jConcept(right)
-    } yield {
-      pf.getShortestPaths(c1, c2, null).toList
-    }
-    val list = listOpt.getOrElse(Nil)
-    // now map back from WS4j to JWNL
-    list.map { sub =>
-      val ssn = sub.subsumer.getSynset
-      val ss  = SynsetDAO.findSynsetBySynset(ssn)
-      val n   = ss.getName
-      val p   = ss.getPos match {
-        case edu.cmu.lti.jawjaw.pobj.POS.a => POS.ADJECTIVE
-        case edu.cmu.lti.jawjaw.pobj.POS.r => POS.ADVERB
-        case edu.cmu.lti.jawjaw.pobj.POS.n => POS.NOUN
-        case edu.cmu.lti.jawjaw.pobj.POS.v => POS.VERB
-      }
-      // println(s"name = '$n', pos = $p")
-      synsets(n, p).head
-    }
-  }
+//  /** NOTE: this is currently wrong. The returned
+//    * path is always of length 1 and seems to correspond
+//    * to the least-common hypernym.
+//    * Looks like `getAllPaths` is wrong in WS4j.
+//    */
+//  def shortestPath(left: Synset, right: Synset): List[Synset] = {
+//    val pf = new PathFinder(lexdb)
+//    val listOpt = for {
+//      c1 <- getWS4jConcept(left )
+//      c2 <- getWS4jConcept(right)
+//    } yield {
+//      pf.getShortestPaths(c1, c2, null).toList
+//    }
+//    val list = listOpt.getOrElse(Nil)
+//    // now map back from WS4j to JWNL
+//    list.map { sub =>
+//      val ssn = sub.subsumer.getSynset
+//      val ss  = SynsetDAO.findSynsetBySynset(ssn)
+//      val n   = ss.getName
+//      val p   = ss.getPos match {
+//        case edu.cmu.lti.jawjaw.pobj.POS.a => POS.ADJECTIVE
+//        case edu.cmu.lti.jawjaw.pobj.POS.r => POS.ADVERB
+//        case edu.cmu.lti.jawjaw.pobj.POS.n => POS.NOUN
+//        case edu.cmu.lti.jawjaw.pobj.POS.v => POS.VERB
+//      }
+//      // println(s"name = '$n', pos = $p")
+//      synsets(n, p).head
+//    }
+//  }
 
   ////////////////// Morphy ///////////////////////////
 
@@ -170,7 +170,7 @@ class WordNet(wnConfig: InputStream) {
   }
 
   def morphy(s: String): String = {
-    val m: List[String] = POS.getAllPOS.map(pos =>
+    val m: List[String] = net.didion.jwnl.data.POS.getAllPOS.map(pos =>
       morphy(s, pos.asInstanceOf[POS]))(breakOut)
     val bases: List[String] = m.filterNot(_.isEmpty).distinct
     bases.headOption.getOrElse("")
@@ -224,26 +224,38 @@ class WordNet(wnConfig: InputStream) {
   def lowestCommonHypernym(left: Synset, right: Synset): Option[Synset] = {
     val lPaths  = hypernymPaths(left)
     val rPaths  = hypernymPaths(right)
+    lch(lPaths, rPaths)
+  }
+
+  private[this] def lch(lPaths: List[List[Synset]], rPaths: List[List[Synset]]): Option[Synset] = {
     val pairs   = for (lPath <- lPaths; rPath <- rPaths) yield (lPath, rPath)
     val lchs    = ArrayBuffer[(Synset,Int)]()
-    pairs.map { pair =>
-      val lSet = Set(pair._1).flatten
-      val matched = pair._2
-        .zipWithIndex
-        .filter(si => lSet.contains(si._1))
+    pairs.map { case (lPath, rPath) =>
+      val lSet    = lPath.toSet // Set(p1).flatten
+      val matched = rPath.zipWithIndex.filter { case (s, i) => lSet.contains(s) }
       if (matched.nonEmpty) lchs += matched.head
     }
-    val lchss: List[Synset] = lchs.sortWith((a, b) => a._2 < b._2)
-      .map(lc => lc._1)(breakOut)
+    if (lchs.isEmpty) None else Some(lchs.minBy(_._2)._1)
+  }
 
-    lchss.headOption
+  /** Note: this does not follow up on sister terms or hypoterms */
+  def shortestHypernymPath(left: Synset, right: Synset): Option[(List[Synset], List[Synset])] = {
+    val lPaths  = hypernymPaths(left )
+    val rPaths  = hypernymPaths(right)
+    lch(lPaths, rPaths).map { common =>
+      val lPathsF   = lPaths.filter(_.contains(common))
+      val rPathsF   = rPaths.filter(_.contains(common))
+      val minLeft   = lPathsF.minBy(_.indexOf(common))
+      val minRight  = rPathsF.minBy(_.indexOf(common))
+      val l         = minLeft .take(minLeft .indexOf(common) + 1)
+      val r         = minRight.take(minRight.indexOf(common) + 1)
+      (l, r)
+    }
   }
 
   def minDepth(ss: Synset): Int = {
     val lens = hypernymPaths(ss)
-      .map(path => path.size)
-      .sortWith((a,b) => a > b)
-    lens.headOption.getOrElse(0) - 1
+    if (lens.isEmpty) -1 else lens.map(_.size).min - 1
   }
 
   def format(ss: Synset): String =
