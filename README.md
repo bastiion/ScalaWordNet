@@ -1,9 +1,13 @@
 # ScalaWordNet
 
+[![Flattr this](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=sciss&url=https%3A%2F%2Fgithub.com%2FSciss%2FScalaWordNet&title=ScalaWordNet&language=Scala&tags=github&category=software)
+
+## statement
+
 Scala bindings around [WordNet](http://wordnet.princeton.edu), [WS4j](https://github.com/Sciss/ws4j),
 and [JWNL](http://jwordnet.sourceforge.net/).
 The original author was Sujit Pal (Scalcium), adapted by Hanns Holger Rutz
-to be more idiomatic Scala and less Python. (C)opyright 2015,
+to be more idiomatic Scala and less Python. (C)opyright 2015&ndash;2016,
 all rights reserved. Published under the GNU General Public License v2+.
 
 The file `WordNetTest.scala` gives an overview of the API.
@@ -36,6 +40,10 @@ and unzip the `.db` file into the `config` directory.
 There is perhaps an alternative, English only, version here:
 http://sourceforge.net/projects/wnsql/files/wnsql3/sqlite/3.1/sqlite-31.db.zip/download
 (The format doesn't seem to be compatible with Jawjaw)
+
+## contributing
+
+Please see the file [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## TO-DO
 
