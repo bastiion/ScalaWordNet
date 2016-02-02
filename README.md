@@ -1,6 +1,7 @@
 # ScalaWordNet
 
 [![Flattr this](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=sciss&url=https%3A%2F%2Fgithub.com%2FSciss%2FScalaWordNet&title=ScalaWordNet&language=Scala&tags=github&category=software)
+[![Build Status](https://travis-ci.org/Sciss/ScalaWordNet.svg?branch=master)](https://travis-ci.org/Sciss/ScalaWordNet)
 
 ## statement
 
