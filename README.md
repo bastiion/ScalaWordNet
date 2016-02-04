@@ -25,6 +25,8 @@ Background:
 Because of the combination of WS4j (jawjaw) and JWNL, currently the WordNet database must 
 be present in two different forms. Hopefully this will be resolved in a future version.
 
+As a shortcut, you can simply run `sbt download-database` instead of the following manual steps.
+
 ### WordNet-3.0
 
 Download the original WordNet package from http://wordnet.princeton.edu/wordnet/download/ and 

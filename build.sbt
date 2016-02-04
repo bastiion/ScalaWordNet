@@ -26,3 +26,32 @@ initialCommands in console :=
     |val wn = WordNet()
     |import wn._
     |""".stripMargin
+
+lazy val `download-database` = taskKey[Unit]("Download the word-net database and installation to config and link")
+
+// cf.https://stackoverflow.com/questions/27466869/download-a-zip-from-url-and-extract-it-in-resource-using-sbt
+`download-database` := {
+  val configDir = file("config")
+  val dbFile    = configDir / "wnjpn.db"
+  val st        = streams.value
+  if (dbFile.exists()) {
+    st.log.info(s"Database file ${dbFile.name} already present.")
+  } else {
+    st.log.info("Downloading database...")
+    IO.withTemporaryFile(prefix = "wnjpn.db", postfix = "gz") { tmpFile =>
+      IO.download(new URL("http://nlpwww.nict.go.jp/wn-ja/data/1.1/wnjpn.db.gz"), tmpFile)
+      IO.gunzip(tmpFile, dbFile)
+    }
+  }
+  val linkDir = file("link")
+  val wnFile  = linkDir / "WordNet-3.0"
+  if (wnFile.exists()) {
+    st.log.info(s"WordNet installation ${wnFile.name} already present.")
+  } else {
+    st.log.info("Downloading WordNet...")
+    IO.withTemporaryFile(prefix = "WordNet", postfix = "gz") { tmpFile =>
+      IO.download(new URL("http://wordnetcode.princeton.edu/3.0/WordNet-3.0.tar.gz"), tmpFile)
+      Seq("tar", "-xf", tmpFile.getPath, "-C", linkDir.getPath).!
+    }
+  }
+}
