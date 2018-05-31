@@ -13,8 +13,16 @@ licenses      := Seq("GPL v2+" -> url("https://www.gnu.org/licenses/gpl-2.0.txt"
 libraryDependencies ++= Seq(
   "de.sciss"        % "ws4j"            % "0.1.0",
   "net.sf.jwordnet" % "jwnl"            % "1.4_rc3",
-  "com.novocode"    % "junit-interface" % "0.11"     % "test"
+  "com.novocode"    % "junit-interface" % "0.11"     % "test",
+  "com.lihaoyi"     % "ammonite"        % "1.1.2"    % "test" cross CrossVersion.full
 )
+
+sourceGenerators in Test += Def.task {
+  val file = (sourceManaged in Test).value / "amm.scala"
+  IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
+  Seq(file)
+}.taskValue
+
 
 // cf. http://www.scala-sbt.org/0.13.5/docs/Detailed-Topics/Classpaths.html
 unmanagedClasspath in Runtime += baseDirectory.value / "config"
@@ -39,7 +47,7 @@ lazy val `download-database` = taskKey[Unit]("Download the word-net database and
   } else {
     st.log.info("Downloading database...")
     IO.withTemporaryFile(prefix = "wnjpn.db", postfix = "gz") { tmpFile =>
-      IO.download(new URL("http://nlpwww.nict.go.jp/wn-ja/data/1.1/wnjpn.db.gz"), tmpFile)
+      IO.download(new URL("http://compling.hss.ntu.edu.sg/wnja/data/1.1/wnjpn.db.gz"), tmpFile)
       IO.gunzip(tmpFile, dbFile)
     }
   }
